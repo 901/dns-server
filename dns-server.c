@@ -154,7 +154,8 @@ void process_request (void* recvbuf, int fd) {
                 char* query = (char*)recvbuf + sizeof(dns_header); //gets the query name
                 char name[256];
                 char* namep = name;
-                int len;
+                uint8_t len;
+                unsigned int bytes_recieved = 0;
 		int found = 0; //default 0 not found
 	       	querylen = strlen(query);
 
@@ -170,15 +171,23 @@ void process_request (void* recvbuf, int fd) {
 
 		//reading the query name
                 while((int)*query != 0) {
-                    len = (int)*query;
+                    len = (uint8_t)*query;
                     printf("len (1): %d\n", len);
+                    if ((bytes_recieved + len) >= 256) {
+                        return;
+                    }
                     memcpy(namep, query + 1, len);
+                    bytes_recieved += len;
                     namep += len;
                     query += len + 1;
-                    len = (int)*query;
+                    len = (uint8_t)*query;
                     if(len != 0) {
+                        if ((bytes_recieved + len) >= 256) {
+                            return;
+                        }
                             *namep++ = '.';
                             memcpy(namep, query + 1, len);
+                            bytes_recieved += len;
                     }
                     *namep = 0;
                 }
